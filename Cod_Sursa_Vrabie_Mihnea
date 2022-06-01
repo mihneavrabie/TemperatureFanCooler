@@ -1,0 +1,130 @@
+#include "DHT.h"            //includem librariile
+#define DHTPIN 5            //senzor temp % hym
+#define DHTTYPE DHT11   
+const int IRS = 4;   //senzor ir
+const int LEDROSU = 6; 
+const int LEDALBASTRU = 7;        //leduri  
+const int Vent = 3;       //relee
+const int Buzzer = 2;
+int IRSstate = 0;        
+DHT dht(DHTPIN, DHTTYPE);
+#include <Wire.h>                    //lcd        
+#include <LiquidCrystal_I2C.h>  
+
+bool senzor_activat = false;
+
+
+
+
+
+
+byte ventilator[] = {
+  B00000,
+  B00000,
+  B11001,
+  B01011,
+  B00100,                      //caractere custom
+  B11010,
+  B10011,
+  B00000
+};
+
+LiquidCrystal_I2C lcd(0x27,16,2);      //adres i2c lcd
+                                  
+
+void setup() {
+  pinMode(IRS, INPUT);
+  pinMode(LEDROSU, OUTPUT);          //declaram statul pinilor
+  pinMode(LEDALBASTRU, OUTPUT);
+  pinMode(Vent, OUTPUT);
+  pinMode(Buzzer, OUTPUT);
+ 
+  lcd.begin(); 
+  lcd.backlight();                 //initializam compontele 
+  dht.begin();
+  lcd.createChar(0, ventilator);
+ 
+}
+
+void loop() {
+ 
+
+  float h = dht.readHumidity();
+  float t = dht.readTemperature(); //salvam datele de la DHT in variabile de tip float 
+  IRSstate = digitalRead(IRS);
+
+  lcd.setCursor(0,0);            
+  lcd.print("Hym:");
+  lcd.print(h);
+  lcd.print("%");
+  lcd.setCursor(0,1);
+  lcd.print("Temp:");       //afisam pe lcd parametrii
+  lcd.print(t);
+  lcd.print("C");
+  
+
+ 
+
+ 
+ 
+   if (t < 27)
+  {
+    digitalWrite(LEDALBASTRU, HIGH);         //conditional led albastru
+     
+  } 
+   else{
+    digitalWrite(LEDALBASTRU, LOW);
+     
+  
+}
+if (t > 27)
+  {
+    digitalWrite(LEDROSU, HIGH);         //conditional led rosu
+     
+  } 
+   else{
+    digitalWrite(LEDROSU, LOW);
+     
+  
+}
+
+
+
+   if (IRSstate == LOW)
+  {
+     if (t > 27)
+  {
+    digitalWrite(Vent, LOW);         //conditional temp
+     lcd.setCursor(13,1); 
+     lcd.write(0);
+  } 
+  
+  }
+  else{
+    digitalWrite(Vent, HIGH);
+     lcd.setCursor(13,1); 
+     lcd.print(" ");
+  }
+     if (IRSstate == HIGH)
+  {
+     
+  
+    digitalWrite(Vent, HIGH);        
+     
+  } 
+   if( IRSstate == LOW && !senzor_activat ){
+        senzor_activat = true;
+        digitalWrite(Buzzer, LOW);                              //conditional buzzer
+        delay(1000);
+      digitalWrite(Buzzer, HIGH); 
+    }
+
+    
+   if( IRSstate == HIGH && senzor_activat ){
+      senzor_activat = false;
+     digitalWrite(Buzzer, LOW); 
+      delay(1000);
+       digitalWrite(Buzzer, HIGH); 
+   }
+  
+  }
